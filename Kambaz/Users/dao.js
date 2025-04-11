@@ -1,59 +1,9 @@
-import users from "../Database/users.js";
-import { v4 as uuidv4 } from "uuid";
+/* import users from "../Database/users.js"; */
+/* import { v4 as uuidv4 } from "uuid"; */
 import * as courseDao from "../Courses/dao.js";
 import * as enrollmentDao from "../Enrollments/dao.js";
-
-// Initialize users if empty
-if (users.length === 0) {
-    // Add some default users
-    users.push(
-        {
-            "_id": "234",
-            "username": "dark_knight",
-            "password": "wayne123",
-            "firstName": "Bruce",
-            "lastName": "Wayne",
-            "email": "bruce@wayne.com",
-            "dob": "1972-02-19",
-            "role": "STUDENT",
-            "loginId": "001234562S",
-            "section": "S101",
-            "lastActivity": "2020-11-02",
-            "totalActivity": "15:32:43",
-            "courses": []
-        },
-        {
-            "_id": "345",
-            "username": "black_widow",
-            "password": "romanoff123",
-            "firstName": "Natasha",
-            "lastName": "Romanoff",
-            "email": "natasha@avengers.com",
-            "dob": "1984-11-22",
-            "role": "TA",
-            "loginId": "001234564S",
-            "section": "S101",
-            "lastActivity": "2020-11-05",
-            "totalActivity": "13:23:34",
-            "courses": []
-        },
-        {
-            "_id": "123",
-            "username": "iron_man",
-            "password": "stark123",
-            "firstName": "Tony",
-            "lastName": "Stark",
-            "email": "tony@stark.com",
-            "dob": "1970-05-29T00:00:00.000Z",
-            "role": "FACULTY",
-            "loginId": "001234561S",
-            "section": "S101",
-            "lastActivity": "2020-10-01",
-            "totalActivity": "10:21:32",
-            "courses": []
-        }
-    );
-}
+import model from "./model.js";
+import users from "../Database/users.js";
 
 // Sync user courses with enrollments
 const syncUserCourses = () => {
@@ -84,43 +34,26 @@ syncUserCourses();
 }; */
 
 export const createUser = (user) => {
-    users.push(user);
-    return user;
+    const newUser = { ...user, _id: new Date().getTime().toString() };
+    users.push(newUser);
+    return newUser;
 };
 
-export const findAllUsers = () => users;
+export const findAllUsers = () => model.find();
 
-export const findUserById = (userId) => {
-    const user = users.find(u => u._id === userId);
-    return user;
-};
+export const findUserById = (userId) => model.findById(userId);
 
-export const findUserByUsername = (username) => users.find((user) => user.username === username);
+export const findUserByUsername = (username) => model.findOne({ username: username });
 
-export const findUserByCredentials = (username, password) =>
-    users.find((user) => user.username === username && user.password === password);
+export const findUserByCredentials = (username, password) => model.findOne({ username, password });
 
-export const findUsersByRole = (role) => {
-    return users.filter(u => u.role === role);
-};
+export const findUsersByRole = (role) => model.find({ role: role });
 
-export const findUsersByCourse = (courseId) => {
-    return users.filter(user => user.courses?.includes(courseId));
-};
+export const findUsersByCourse = (courseId) => model.find({ courses: courseId });
 
-export const updateUser = (userId, user) => {
-    const index = users.findIndex(u => u._id === userId);
-    if (index === -1) return null;
-    users[index] = { ...users[index], ...user };
-    return users[index];
-};
+export const updateUser = (userId, user) => model.updateOne({ _id: userId }, { $set: user });
 
-export const deleteUser = (userId) => {
-    const index = users.findIndex(u => u._id === userId);
-    if (index === -1) return false;
-    users.splice(index, 1);
-    return true;
-};
+export const deleteUser = (userId) => model.deleteOne({ _id: userId });
 
 export const enrollUserInCourse = (userId, courseId) => {
     // Update user's courses

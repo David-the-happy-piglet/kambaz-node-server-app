@@ -6,9 +6,9 @@ import { v4 as uuidv4 } from "uuid";
 const router = express.Router();
 
 // Authentication endpoints
-router.post("/users/signin", (req, res) => {
+router.post("/users/signin", async (req, res) => {
     const { username, password } = req.body;
-    const user = userDao.findUserByCredentials(username, password);
+    const user = await userDao.findUserByCredentials(username, password);
     if (!user) {
         res.status(401).json({ message: "Invalid username or password" });
         return;
@@ -17,13 +17,19 @@ router.post("/users/signin", (req, res) => {
     res.json(user);
 });
 
-router.post("/users/signup", (req, res) => {
+router.post("/users/signup", async (req, res) => {
+
+    const user = await dao.findUserByUsername(req.body.username);
+    if (user) {
+        res.status(400).json({ message: "Username already taken" });
+        return;
+    }
     const newUser = {
         _id: uuidv4(),
         ...req.body,
         courses: []
     };
-    const createdUser = userDao.createUser(newUser);
+    const createdUser = await userDao.createUser(newUser);
     req.session.user = createdUser;
     res.json(createdUser);
 });
@@ -33,16 +39,17 @@ router.post("/users/signout", (req, res) => {
     res.json({ message: "Signed out successfully" });
 });
 
-router.post("/users/profile", (req, res) => {
+router.post("/users/profile", async (req, res) => {
     if (!req.session.user) {
         res.status(401).json({ message: "Not authenticated" });
         return;
     }
-    res.json(req.session.user);
+    const currentUser = await userDao.findUserById(req.session.user._id);
+    res.json(currentUser);
 });
 
 // Get current user's courses
-router.get("/users/current/courses", (req, res) => {
+router.get("/users/current/courses", async (req, res) => {
     if (!req.session.user) {
         res.status(401).json({ message: "Not authenticated" });
         return;
@@ -50,17 +57,17 @@ router.get("/users/current/courses", (req, res) => {
 
     // If user is faculty, return all courses
     if (req.session.user.role === "FACULTY") {
-        const courses = userDao.findAllCourses();
+        const courses = await courseDao.findAllCourses();
         res.json(courses);
     } else {
         // For students, return only enrolled courses
-        const courses = userDao.findUserCourses(req.session.user._id);
+        const courses = await userDao.findUserCourses(req.session.user._id);
         res.json(courses);
     }
 });
 
 // Create a course for the current user (faculty only)
-router.post("/users/current/courses", (req, res) => {
+router.post("/users/current/courses", async (req, res) => {
     if (!req.session.user) {
         res.status(401).json({ message: "Not authenticated" });
         return;
@@ -77,34 +84,34 @@ router.post("/users/current/courses", (req, res) => {
         faculty: req.session.user._id
     };
 
-    const createdCourse = courseDao.createCourse(newCourse);
+    const createdCourse = await courseDao.createCourse(newCourse);
     res.json(createdCourse);
 });
 
 // Get all users
-router.get("/users", (req, res) => {
-    const users = userDao.findAllUsers();
+router.get("/users", async (req, res) => {
+    const users = await userDao.findAllUsers();
     res.json(users);
 });
 
 // Get users by role
-router.get("/users/role/:role", (req, res) => {
+router.get("/users/role/:role", async (req, res) => {
     const { role } = req.params;
-    const users = userDao.findUsersByRole(role);
+    const users = await userDao.findUsersByRole(role);
     res.json(users);
 });
 
 // Get users enrolled in a course
-router.get("/courses/:cid/users", (req, res) => {
+router.get("/courses/:cid/users", async (req, res) => {
     const { cid } = req.params;
-    const users = userDao.findUsersByCourse(cid);
+    const users = await userDao.findUsersByCourse(cid);
     res.json(users);
 });
 
 // Get a specific user
-router.get("/users/:uid", (req, res) => {
+router.get("/users/:uid", async (req, res) => {
     const { uid } = req.params;
-    const user = userDao.findUserById(uid);
+    const user = await userDao.findUserById(uid);
     if (!user) {
         res.status(404).json({ message: "User not found" });
         return;
@@ -113,20 +120,20 @@ router.get("/users/:uid", (req, res) => {
 });
 
 // Create a new user (faculty only)
-router.post("/users", (req, res) => {
+router.post("/users", async (req, res) => {
     const newUser = {
         _id: uuidv4(),
         ...req.body,
         courses: []
     };
-    const createdUser = userDao.createUser(newUser);
+    const createdUser = await userDao.createUser(newUser);
     res.json(createdUser);
 });
 
 // Update a user (faculty only)
-router.put("/users/:uid", (req, res) => {
+router.put("/users/:uid", async (req, res) => {
     const { uid } = req.params;
-    const updatedUser = userDao.updateUser(uid, req.body);
+    const updatedUser = await userDao.updateUser(uid, req.body);
     if (!updatedUser) {
         res.status(404).json({ message: "User not found" });
         return;
@@ -135,9 +142,9 @@ router.put("/users/:uid", (req, res) => {
 });
 
 // Delete a user (faculty only)
-router.delete("/users/:uid", (req, res) => {
+router.delete("/users/:uid", async (req, res) => {
     const { uid } = req.params;
-    const success = userDao.deleteUser(uid);
+    const success = await userDao.deleteUser(uid);
     if (!success) {
         res.status(404).json({ message: "User not found" });
         return;
@@ -146,9 +153,9 @@ router.delete("/users/:uid", (req, res) => {
 });
 
 // Enroll a user in a course
-router.post("/users/:uid/courses/:cid/enroll", (req, res) => {
+router.post("/users/:uid/courses/:cid/enroll", async (req, res) => {
     const { uid, cid } = req.params;
-    const updatedUser = userDao.enrollUserInCourse(uid, cid);
+    const updatedUser = await userDao.enrollUserInCourse(uid, cid);
     if (!updatedUser) {
         res.status(404).json({ message: "User not found" });
         return;
@@ -157,9 +164,9 @@ router.post("/users/:uid/courses/:cid/enroll", (req, res) => {
 });
 
 // Unenroll a user from a course
-router.post("/users/:uid/courses/:cid/unenroll", (req, res) => {
+router.post("/users/:uid/courses/:cid/unenroll", async (req, res) => {
     const { uid, cid } = req.params;
-    const updatedUser = userDao.unenrollUserFromCourse(uid, cid);
+    const updatedUser = await userDao.unenrollUserFromCourse(uid, cid);
     if (!updatedUser) {
         res.status(404).json({ message: "User not found" });
         return;

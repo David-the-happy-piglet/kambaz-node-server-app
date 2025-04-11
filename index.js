@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from "mongoose";
 import Hello from './Hello.js';
 import Lab5 from './Lab5/index.js';
 import UserRoutes from "./Kambaz/Users/routes.js";
@@ -11,6 +12,9 @@ import AssignmentRoutes from "./Kambaz/Assignments/routes.js";
 import EnrollmentRoutes from "./Kambaz/Enrollments/routes.js";
 import GradeRoutes from "./Kambaz/Grades/routes.js";
 
+const CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING || "mongodb://127.0.0.1:27017/kanbas"
+mongoose.connect(CONNECTION_STRING);
+mongoose.connect(CONNECTION_STRING);
 const app = express();
 
 // Configure CORS first
