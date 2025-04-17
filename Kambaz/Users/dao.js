@@ -1,5 +1,5 @@
 /* import users from "../Database/users.js"; */
-/* import { v4 as uuidv4 } from "uuid"; */
+import { v4 as uuidv4 } from "uuid";
 import * as courseDao from "../Courses/dao.js";
 import * as enrollmentDao from "../Enrollments/dao.js";
 import model from "./model.js";
@@ -34,10 +34,9 @@ syncUserCourses();
 }; */
 
 export const createUser = (user) => {
-    const newUser = { ...user, _id: new Date().getTime().toString() };
-    users.push(newUser);
-    return newUser;
-};
+    const newUser = { ...user, _id: uuidv4() };
+    return model.create(newUser);
+}
 
 export const findAllUsers = () => model.find();
 
@@ -54,6 +53,14 @@ export const findUsersByCourse = (courseId) => model.find({ courses: courseId })
 export const updateUser = (userId, user) => model.updateOne({ _id: userId }, { $set: user });
 
 export const deleteUser = (userId) => model.deleteOne({ _id: userId });
+
+export const findUsersByPartialName = (partialName) => {
+    const regex = new RegExp(partialName, "i"); // 'i' makes it case-insensitive
+    return model.find({
+        $or: [{ firstName: { $regex: regex } }, { lastName: { $regex: regex } }],
+    });
+};
+
 
 export const enrollUserInCourse = (userId, courseId) => {
     // Update user's courses
