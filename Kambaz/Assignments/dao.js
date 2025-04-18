@@ -1,35 +1,32 @@
-import assignments from "../Database/assignments.js";
+import { v4 as uuidv4 } from "uuid";
+import model from "./model.js";
 
-export const findAllAssignments = () => assignments;
+export function findAllAssignments() {
+    return model.find();
+}
 
-export const findAssignmentById = (assignmentId) => {
-    const assignment = assignments.find(a => a._id === assignmentId);
-    return assignment;
-};
+export function findAssignmentById(assignmentId) {
+    return model.findById(assignmentId);
+}
 
-export const findAssignmentsForModule = (moduleId) => {
-    return assignments.filter(a => a.module === moduleId);
-};
+export function findAssignmentsForCourse(courseId) {
+    return model.find({ course: courseId });
+}
 
-export const findAssignmentsByCourse = (courseId) => {
-    return assignments.filter(a => a.course === courseId);
-};
+export function createAssignment(assignment) {
+    const newAssignment = { ...assignment, _id: uuidv4() };
+    return model.create(newAssignment);
+}
 
-export const createAssignment = (assignment) => {
-    assignments.push(assignment);
-    return assignment;
-};
+export function updateAssignment(assignmentId, assignment) {
+    return model.findOneAndUpdate(
+        { _id: assignmentId },
+        { $set: assignment },
+        { new: true }
+    );
+}
 
-export const updateAssignment = (assignmentId, assignment) => {
-    const index = assignments.findIndex(a => a._id === assignmentId);
-    if (index === -1) return null;
-    assignments[index] = { ...assignments[index], ...assignment };
-    return assignments[index];
-};
-
-export const deleteAssignment = (assignmentId) => {
-    const index = assignments.findIndex(a => a._id === assignmentId);
-    if (index === -1) return false;
-    assignments.splice(index, 1);
-    return true;
-}; 
+export function deleteAssignment(assignmentId) {
+    return model.deleteOne({ _id: assignmentId })
+        .then(result => result.deletedCount > 0);
+} 

@@ -57,36 +57,12 @@ app.use(express.json());
 app.use(session(sessionOptions));
 
 // Routes
-CourseRoutes(app);
-ModuleRoutes(app);
-app.use('/api', (req, res, next) => {
-    try {
-        UserRoutes(req, res, next);
-    } catch (err) {
-        next(err);
-    }
-});
-app.use('/api', (req, res, next) => {
-    try {
-        AssignmentRoutes(req, res, next);
-    } catch (err) {
-        next(err);
-    }
-});
-app.use('/api', (req, res, next) => {
-    try {
-        EnrollmentRoutes(req, res, next);
-    } catch (err) {
-        next(err);
-    }
-});
-app.use('/api', (req, res, next) => {
-    try {
-        GradeRoutes(req, res, next);
-    } catch (err) {
-        next(err);
-    }
-});
+app.use('/api', CourseRoutes);
+app.use('/api', ModuleRoutes);
+app.use('/api', UserRoutes);
+app.use('/api', AssignmentRoutes);
+app.use('/api', EnrollmentRoutes);
+app.use('/api', GradeRoutes);
 
 console.log("app type:", typeof app);
 console.log("app.get type:", typeof app.get);
@@ -108,6 +84,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });

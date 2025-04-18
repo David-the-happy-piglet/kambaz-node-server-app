@@ -1,39 +1,43 @@
-import courses from "../Database/courses.js";
+/* import courses from "../Database/courses.js"; */
 import { v4 as uuidv4 } from "uuid";
-import Database from "../Database/index.js";
+/* import Database from "../Database/index.js"; */
+import model from "./model.js";
 
-export const findAllCourses = () => courses;
+export function findAllCourses() {
+    return model.find();
+}
 
-export const findCourseById = (courseId) => {
-    const course = courses.find(c => c._id === courseId);
-    return course;
-};
+export function findCourseById(courseId) {
+    return model.findById(courseId);
+}
 
-export const createCourse = (course) => {
-    courses.push(course);
-    return course;
-};
+export function createCourse(course) {
+    const newCourse = { ...course, _id: uuidv4() };
+    return model.create(newCourse);
+}
 
-export const updateCourse = (courseId, course) => {
-    const index = courses.findIndex(c => c._id === courseId);
-    if (index === -1) return null;
-    courses[index] = { ...courses[index], ...course };
-    return courses[index];
-};
+/* export function updateCourse(courseId, course) {
+    return model.findOneAndUpdate(
+        { _id: courseId },
+        { $set: course },
+        { new: true }
+    );
+} */
 
-export const deleteCourse = (courseId) => {
-    const index = courses.findIndex(c => c._id === courseId);
-    if (index === -1) return false;
-    courses.splice(index, 1);
-    return true;
-};
+export function updateCourse(courseId, courseUpdates) {
+    return model.updateOne({ _id: courseId }, { $set: courseUpdates });
+}
 
-export const findCoursesForEnrolledUser = (userId) => {
-    const { enrollments } = Database;
-    const enrolledCourses = courses.filter((course) =>
-        enrollments.some((enrollment) => enrollment.user === userId && enrollment.course === course._id));
-    return enrolledCourses;
-};
+export function deleteCourse(courseId) {
+    return model.deleteOne({ _id: courseId })
+        .then(result => result.deletedCount > 0);
+}
+
+export function findCoursesForEnrolledUser(userId) {
+    // This function should be implemented in the Enrollments module
+    // as it requires access to enrollment data
+    throw new Error("This function should be implemented in the Enrollments module");
+}
 
 /* export function findCoursesForEnrolledUser(userId) {
     const { courses, enrollments } = Database;

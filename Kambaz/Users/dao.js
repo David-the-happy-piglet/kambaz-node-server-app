@@ -3,14 +3,15 @@ import { v4 as uuidv4 } from "uuid";
 import * as courseDao from "../Courses/dao.js";
 import * as enrollmentDao from "../Enrollments/dao.js";
 import model from "./model.js";
-import users from "../Database/users.js";
+/* import users from "../Database/users.js"; */
 
 // Sync user courses with enrollments
-const syncUserCourses = () => {
-    const enrollments = enrollmentDao.findAllEnrollments();
+const syncUserCourses = async () => {
+    const enrollments = await enrollmentDao.findAllEnrollments();
+    const users = await model.find();
 
     // For each user, update their courses based on enrollments
-    users.forEach(user => {
+    for (const user of users) {
         if (user.role !== "FACULTY") {
             // Get all enrollments for this user
             const userEnrollments = enrollments.filter(e => e.user === user._id && e.enrolled);
@@ -19,9 +20,9 @@ const syncUserCourses = () => {
             const courseIds = userEnrollments.map(e => e.course);
 
             // Update user's courses
-            user.courses = courseIds;
+            await model.updateOne({ _id: user._id }, { $set: { courses: courseIds } });
         }
-    });
+    }
 };
 
 // Call sync function to ensure data consistency
@@ -62,37 +63,54 @@ export const findUsersByPartialName = (partialName) => {
 };
 
 
-export const enrollUserInCourse = (userId, courseId) => {
-    // Update user's courses
-    const user = findUserById(userId);
-    if (!user) {
+export const enrollUserInCourse = async (userId, courseId) => {
+    try {
+        // Check if user exists
+        const user = await model.findById(userId);
+        if (!user) {
+            return null;
+        }
+
+        // Add course to user's courses array
+        const updatedUser = await model.findByIdAndUpdate(
+            userId,
+            { $addToSet: { courses: courseId } }, // $addToSet prevents duplicates
+            { new: true }
+        );
+
+        // Update enrollment status
+        await enrollmentDao.toggleEnrollment(userId, courseId);
+
+        return updatedUser;
+    } catch (error) {
+        console.error("Error enrolling user in course:", error);
         return null;
     }
-    if (!user.courses) {
-        user.courses = [];
-    }
-    if (!user.courses.includes(courseId)) {
-        user.courses.push(courseId);
-    }
-
-    // Create or update enrollment
-    enrollmentDao.toggleEnrollment(userId, courseId);
-
-    return user;
 };
 
-export const unenrollUserFromCourse = (userId, courseId) => {
-    // Update user's courses
-    const user = findUserById(userId);
-    if (!user || !user.courses) {
+export const unenrollUserFromCourse = async (userId, courseId) => {
+    try {
+        // Update user's courses
+        const user = await model.findById(userId);
+        if (!user) {
+            return null;
+        }
+
+        // Remove course from user's courses array
+        const updatedUser = await model.findByIdAndUpdate(
+            userId,
+            { $pull: { courses: courseId } },
+            { new: true }
+        );
+
+        // Update enrollment status
+        await enrollmentDao.toggleEnrollment(userId, courseId);
+
+        return updatedUser;
+    } catch (error) {
+        console.error("Error unenrolling user from course:", error);
         return null;
     }
-    user.courses = user.courses.filter(cid => cid !== courseId);
-
-    // Update enrollment
-    enrollmentDao.toggleEnrollment(userId, courseId);
-
-    return user;
 };
 
 // Get courses for a specific user

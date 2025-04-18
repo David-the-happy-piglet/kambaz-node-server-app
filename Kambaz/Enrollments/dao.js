@@ -1,8 +1,61 @@
-import enrollments from "../Database/enrollments.js";
-import { v4 as uuidv4 } from "uuid";
+/* import enrollments from "../Database/enrollments.js"; */
+import model from "./model.js";
+/* import { v4 as uuidv4 } from "uuid"; */
+
+export async function findAllEnrollments() {
+    return model.find();
+}
+
+export async function findCoursesForUser(userId) {
+    const enrollments = await model.find({ user: userId }).populate("course");
+    return enrollments.map((enrollment) => enrollment.course);
+}
+
+export async function findUsersForCourse(courseId) {
+    const enrollments = await model.find({ course: courseId }).populate("user");
+    return enrollments.map((enrollment) => enrollment.user);
+}
+
+export async function enrollUserInCourse(user, course) {
+    const newEnrollment = { user, course, _id: `${user}-${course}` };
+    return model.create(newEnrollment);
+}
+export async function unenrollUserFromCourse(user, course) {
+    return model.deleteOne({ user, course });
+}
+
+
+export async function toggleEnrollment(userId, courseId) {
+    try {
+        // Check if enrollment exists
+        const existingEnrollment = await model.findOne({ user: userId, course: courseId });
+
+        if (existingEnrollment) {
+            // If enrollment exists, delete it (unenroll)
+            await model.deleteOne({ user: userId, course: courseId });
+            return { enrolled: false };
+        } else {
+            // If enrollment doesn't exist, create it (enroll)
+            const newEnrollment = await model.create({
+                user: userId,
+                course: courseId,
+                enrolled: true
+            });
+            return { enrolled: true, enrollment: newEnrollment };
+        }
+    } catch (error) {
+        console.error("Error toggling enrollment:", error);
+        throw error;
+    }
+}
+
+
+
+
+
 
 // Initialize enrollments if empty
-if (enrollments.length === 0) {
+/* if (enrollments.length === 0) {
     // Add some default enrollments
     enrollments.push(
         {
@@ -79,3 +132,4 @@ export const toggleEnrollment = (userId, courseId) => {
     enrollments.push(newEnrollment);
     return newEnrollment;
 };
+ */

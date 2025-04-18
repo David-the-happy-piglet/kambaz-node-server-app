@@ -1,17 +1,38 @@
 import * as modulesDao from "./dao.js";
-export default function ModuleRoutes(app) {
-    app.delete("/api/modules/:moduleId", async (req, res) => {
+import express from 'express';
+
+const router = express.Router();
+
+router.get("/courses/:courseId/modules", async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const modules = await modulesDao.findModulesForCourse(courseId);
+        res.json(modules);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.delete("/modules/:moduleId", async (req, res) => {
+    try {
         const { moduleId } = req.params;
         const status = await modulesDao.deleteModule(moduleId);
-        res.send(status);
-    });
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-    app.put("/api/modules/:moduleId", async (req, res) => {
+router.put("/modules/:moduleId", async (req, res) => {
+    try {
         const { moduleId } = req.params;
         const moduleUpdates = req.body;
         const status = await modulesDao.updateModule(moduleId, moduleUpdates);
-        res.send(status);
-      });
-    
-}
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;
 
