@@ -54,6 +54,7 @@ app.use((req, res, next) => {
 
 // Apply middleware
 app.use(express.json());
+app.set('trust proxy', 1);
 app.use(session(sessionOptions));
 
 // Routes
